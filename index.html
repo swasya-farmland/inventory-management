@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Swasya Ecosystem | 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --swasya-green: #2D5A27;
+            --accent-gold: #C5A028;
+            --sidebar-dark: #121412;
+            --bg-light: #F4F7F4;
+            --glow-green: rgba(45, 90, 39, 0.4);
+        }
+
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { margin: 0; background-color: var(--bg-light); display: flex; height: 100vh; overflow: hidden; }
+
+        input, select, textarea, .btn-pill {
+            border-radius: 50px; padding: 12px 20px; border: 1px solid #E2E8F0;
+            background: white; font-size: 0.9rem; transition: all 0.2s; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--swasya-green); box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1); }
+        
+        .btn-pill { font-weight: 700; cursor: pointer; border: none; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-green { background: var(--swasya-green); color: white; }
+        .btn-gold { background: var(--accent-gold); color: white; }
+
+        #login-screen { 
+            position: fixed; inset: 0; z-index: 1000; 
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=2560'); 
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; justify-content: center; 
+        }
+        .login-card { 
+            background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            padding: 50px; border-radius: 40px; width: 420px; text-align: center; 
+            border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+
+        .sidebar { width: 340px; background: var(--sidebar-dark); color: white; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #ddd; }
+        .sb-header { padding: 30px 20px 20px; text-align: center; }
+        .sb-content { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+        
+        .sb-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0 15px; position: relative; }
+        .sb-label { font-size: 0.6rem; color: var(--accent-gold); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; position: absolute; top: -8px; left: 10px; background: var(--sidebar-dark); padding: 0 8px; }
+
+        .data-panel { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 15px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.1); }
+        #date-display-header { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 12px; display: block; }
+
+        .avail-badge { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 10px 14px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 6px; }
+        .avail-count { font-weight: 800; color: var(--accent-gold); }
+
+        .load-box { background: rgba(45, 90, 39, 0.15); border: 1px solid rgba(45, 90, 39, 0.3); border-radius: 16px; padding: 15px; }
+        .load-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; font-weight: 600; }
+        .load-row:last-child { margin-bottom: 0; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .load-val { color: var(--accent-gold); font-weight: 800; }
+
+        .visit-card { background: rgba(255,255,255,0.08); padding: 15px; margin-bottom: 12px; border-radius: 18px; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s; }
+        .visit-card:hover { background: rgba(255,255,255,0.12); }
+        .status-tag { font-size: 0.55rem; font-weight: 900; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
+
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        header { padding: 20px 40px; background: white; border-bottom: 1px solid #EEE; }
+        
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #E2E8F0; border-radius: 20px; overflow: hidden; }
+        .cal-day { background: white; min-height: 120px; padding: 12px; font-size: 0.85rem; cursor: pointer; overflow-y: auto; }
+        .cal-day.empty { background: #fdfdfd; cursor: default; }
+        .cal-day.selected { background: #F0FDF4; box-shadow: inset 0 0 0 2px var(--swasya-green); z-index: 2; }
+        .cal-head { background: #F8FAFC; padding: 15px; text-align: center; font-weight: 800; font-size: 0.7rem; color: #64748B; }
+
+        .visit-dot { font-size: 0.55rem; padding: 3px 8px; border-radius: 6px; margin-top: 3px; color: white; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .hidden { display: none !important; }
+        .modal-active { display: flex !important; }
+
+        .waitlist-tag { background: #64748B !important; color: white; }
+        .sys-logo { width: 300px; height: 150px; border-radius: 20px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3)); }
+        
+        .nav-btn { background: #f0f0f0; border: none; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-weight: 800; color: var(--swasya-green); }
+        .nav-btn:hover { background: #e0e0e0; }
+
+        .active-proj-btn { background: var(--swasya-green) !important; box-shadow: 0 0 15px var(--glow-green); }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .sb-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body onkeydown="handleGlobalKey(event)">
+
+<div id="login-screen">
+    <div class="login-card">
+        <img src="Swasya Logo 10.png" alt="Swasya Logo" class="sys-logo">
+        <h2 style="color:white; margin-bottom:10px; font-weight:800; letter-spacing: 1px;">INVENTORY</h2>
+        <h3 style="color:var(--accent-gold); margin-bottom:30px; font-weight:400; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 4px;">Management Portal</h3>
+        <input type="text" id="username" placeholder="Username" style="width: 100%; margin-bottom: 15px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="password" id="password" placeholder="Password" style="width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <button class="btn-pill btn-green" style="width: 100%; padding: 18px; letter-spacing: 2px;" onclick="doLogin()">Authenticate</button>
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.65rem; margin-top: 25px; font-weight: 600;">SECURED BY SWASYA ECOSYSTEM 2026</p>
+    </div>
+</div>
+
+<div class="sidebar hidden" id="sidebar">
+    <div class="sb-header">
+        <img src="Swasya Logo 3.png" alt="Logo" style="width: 90px; margin-bottom: 10px;">
+        <span id="u-name" style="font-weight: 800; font-size: 1.1rem; display: block;">User</span>
+        <span id="u-role" style="font-size: 0.65rem; color: var(--accent-gold); text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Role</span>
+    </div>
+
+    <div class="sb-content">
+        <div id="side-inventory-section">
+            <div class="sb-divider"><span class="sb-label">Inventory Status</span></div>
+            <div class="data-panel">
+                <span id="date-display-header"></span>
+                <div id="avail-box">
+                    <div class="avail-badge"><span>Cottages</span> <span id="count-c" class="avail-count">4/4</span></div>
+                    <div class="avail-badge"><span>Glamps</span> <span id="count-g" class="avail-count">1/1</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="side-kitchen-section">
+            <div class="sb-divider"><span class="sb-label">Kitchen Load</span></div>
+            <div class="load-box">
+                <div class="load-row"><span>🥗 Veg Meals</span> <span id="veg-val" class="load-val">0</span></div>
+                <div class="load-row" id="nv-row"><span>🍖 Non-Veg Meals</span> <span id="nv-val" class="load-val">0</span></div>
+                <div class="load-row"><span>👥 Total Visits</span> <span id="pax-val" class="load-val">0</span></div>
+            </div>
+        </div>
+
+        <div class="sb-divider"><span class="sb-label">Booking Logistics</span></div>
+        <div id="project-toggle" style="display: flex; gap: 4px; background: #000; padding: 4px; border-radius: 50px; margin-bottom: 15px;">
+            <button onclick="switchContext('Sannidhi')" id="btn-san" style="flex:1; border:none; border-radius:50px; padding:8px; font-size:0.6rem; cursor:pointer; font-weight:800; color:white; background: transparent;">SANNIDHI</button>
+            <button onclick="switchContext('VanaVida')" id="btn-vv" style="flex:1; border:none; border-radius:50px; padding:8px; font-size:0.6rem; cursor:pointer; font-weight:800; color:white; background: transparent;">VANA VIDA</button>
+        </div>
+        <div id="date-info-list"></div>
+
+        <div id="audit-panel" class="hidden">
+            <div class="sb-divider"><span class="sb-label">Audit & Control</span></div>
+            <div class="data-panel" style="background: rgba(197, 160, 40, 0.05); border-color: rgba(197, 160, 40, 0.2);">
+                <button class="btn-pill btn-gold" style="width:100%; font-size:0.65rem; margin-bottom: 8px; padding: 10px;" onclick="openAddUserModal()">👤 Manage Team</button>
+                <button class="btn-pill btn-green" style="width:100%; font-size:0.65rem; padding: 10px;" onclick="exportAuditToExcel()">📊 Export Audit (.CSV)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sb-footer">
+        <button onclick="location.reload()" style="width:100%; background:none; border:none; color:rgba(255,255,255,0.4); font-size: 0.65rem; cursor:pointer; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">
+            Sign Out
+        </button>
+    </div>
+</div>
+
+<div class="main hidden" id="main-area">
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 id="main-project-heading" style="margin:0; color: var(--swasya-green); font-weight: 800; font-size: 1.5rem;">Sannidhi Eco Farm Bookings</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="global-search" placeholder="🔍 Search Name/Phone..." oninput="updateUI()" style="width: 250px; border: 2px solid var(--swasya-green);">
+                <select id="proj-select" onchange="syncProjectState(this.value)" style="font-weight: 800;">
+                    <option value="Sannidhi">Sannidhi Eco Farms</option>
+                    <option value="VanaVida">Vana Vida</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; background: #F8FAFC; padding: 18px; border-radius: 30px; border: 1px solid #E2E8F0; align-items: center;">
+            <input type="text" id="c-name" placeholder="Client Name" style="flex: 1.5; min-width: 150px;" tabindex="1">
+            <input type="text" id="c-phone" placeholder="Phone Number" style="flex: 1.2; min-width: 130px;" tabindex="2">
+            <input type="number" id="c-pax" placeholder="Pax" style="width: 65px;" tabindex="3">
+            
+            <div id="food-container">
+                <select id="c-food" style="width: 110px;" tabindex="4">
+                    <option value="Veg">Veg Only</option>
+                    <option value="Non-Veg">Non-Veg</option>
+                </select>
+            </div>
+
+            <select id="c-unit" style="flex: 1;" tabindex="5"><option value="Cottage">Cottage</option><option value="Glamp">Glamp</option></select>
+            <input type="date" id="c-date" style="flex: 1; min-width: 130px;" tabindex="6">
+            <button class="btn-pill btn-green" onclick="submitVisit()" style="padding: 12px 25px;" tabindex="7">Book</button>
+        </div>
+    </header>
+
+    <div style="flex: 1; overflow-y: auto; padding: 20px 40px;">
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
+            <button class="nav-btn" onclick="changeMonth(-1)">← Prev</button>
+            <h2 id="calendar-month-year" style="margin:0; color: var(--swasya-green); font-weight: 800; text-transform: uppercase;"></h2>
+            <button class="nav-btn" onclick="changeMonth(1)">Next →</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+    </div>
+</div>
+
+<div id="custom-modal" class="hidden" style="position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: white; width: 100%; max-width: 450px; border-radius: 32px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div id="modal-header" style="background: var(--sidebar-dark); padding: 25px; color: white;">
+            <span id="modal-subtitle" style="color: var(--accent-gold); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">Portal Action</span>
+            <h2 id="modal-title" style="margin: 5px 0 0 0; font-size: 1.4rem; font-weight: 800;">Title</h2>
+        </div>
+        <div id="modal-body" style="padding: 30px; color: #334155; max-height: 400px; overflow-y: auto;"></div>
+        <div id="modal-footer" style="padding: 20px 30px; background: #F8FAFC; display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn-pill" style="background: #E2E8F0; color: #64748B;" onclick="closeModal()">Close</button>
+            <button id="modal-action-btn" class="btn-pill btn-green">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // --- SUPABASE CONFIGURATION ---
+    // 1. Replace these with your actual details from Supabase Settings -> API
+    const SUPABASE_URL = 'https://aoqmhifliyrzuqmutoip.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcW1oaWZsaXlyenVxbXV0b2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNjc4MzQsImV4cCI6MjA4NTk0MzgzNH0.A4yupYqQ37Pg_VO85cwDsTgW5gFGpU9pJV7GKQTO3Ak';
+    
+    // RENAMED TO supabaseClient TO AVOID THE SYNTAX ERROR
+    let supabaseClient = null;
+    if (SUPABASE_URL !== 'YOUR_SUPABASE_PUBLIC_URL') {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    const INITIAL_TEAM = [
+        {id: "nijish", name: "Nijish", role: "Founder", color: "#2c3e50"}, {id: "ashrith", name: "Ashrith", role: "Founder", color: "#8e44ad"},
+        {id: "avinash", name: "Avinash", role: "Founder", color: "#2980b9"}, {id: "akshith", name: "Akshith", role: "AVP", color: "#d35400"},
+        {id: "sandeep", name: "Sandeep", role: "Sales Manager", color: "#27ae60"}, {id: "sharan", name: "Sharan", role: "Sales Manager", color: "#c0392b"},
+        {id: "hema", name: "Hema", role: "Sales Manager", color: "#16a085"}, {id: "apeksh", name: "Apeksh", role: "Sales Manager", color: "#f39c12"},
+        {id: "sandhya", name: "Sandhya", role: "CRM", color: "#7f8c8d"}, {id: "hoysala", name: "Hoysala", role: "Project Manager", color: "#34495e"},
+        {id: "chetan", name: "Chetan", role: "Project Manager", color: "#444"}
+    ];
+
+    let TEAM = JSON.parse(localStorage.getItem('swasya_team_v2')) || INITIAL_TEAM;
+    let session = null;
+    let visits = JSON.parse(localStorage.getItem('swasya_v96')) || [];
+    let selectedDate = new Date().toISOString().split('T')[0];
+    let currentViewDate = new Date();
+    let activeContextProj = 'Sannidhi';
+    let isSupabaseConnected = false;
+
+    // --- DATABASE SYNC LOGIC ---
+    async function initSupabase() {
+        if (!supabaseClient) return;
+        try {
+            const { data: teamData, error: tErr } = await supabaseClient.from('team').select('*');
+            if (tErr) throw tErr;
+            if (teamData && teamData.length > 0) TEAM = teamData;
+
+            const { data: visitData, error: vErr } = await supabaseClient.from('visits').select('*');
+            if (vErr) throw vErr;
+            
+            if (visitData) {
+                visits = visitData.map(v => ({
+                    id: v.id, manager: v.manager, mgrId: v.mgr_id, color: v.color,
+                    proj: v.proj, client: v.client, phone: v.phone, pax: v.pax,
+                    foodPref: v.food_pref, date: v.date, unitType: v.unit_type,
+                    status: v.status, pmComment: v.pm_comment
+                }));
+            }
+            isSupabaseConnected = true;
+        } catch (e) {
+            console.error("Supabase fail, using local:", e);
+            isSupabaseConnected = false;
+        }
+        updateUI();
+    }
+
+    initSupabase();
+
+    function handleGlobalKey(e) {
+        if (e.key === 'Enter') {
+            if (!document.getElementById('login-screen').classList.contains('hidden')) {
+                doLogin();
+            } else {
+                const activeEl = document.activeElement;
+                if (['c-name', 'c-phone', 'c-pax', 'c-food', 'c-unit', 'c-date'].includes(activeEl.id)) submitVisit();
+            }
+        }
+    }
+
+    function doLogin() {
+        const u = document.getElementById('username').value.toLowerCase().trim();
+        const p = document.getElementById('password').value;
+        const user = TEAM.find(t => t.id === u);
+        
+        let isValid = (user && (u === "akshith" ? p === "swasyaAdmin1" : p === u + "2026"));
+
+        if(isValid) {
+            session = user;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('main-area').classList.remove('hidden');
+            
+            // Add Color Dot next to Name
+            const dotColor = isSupabaseConnected ? '#4ade80' : '#f87171';
+            const statusDot = `<span title="${isSupabaseConnected?'Connected':'Offline'}" style="height:10px; width:10px; background:${dotColor}; border-radius:50%; display:inline-block; margin-left:8px; vertical-align:middle; box-shadow: 0 0 5px ${dotColor}"></span>`;
+            
+            document.getElementById('u-name').innerHTML = user.name + statusDot;
+            document.getElementById('u-role').innerText = user.role;
+            document.getElementById('c-date').value = selectedDate;
+            if(u === "akshith") document.getElementById('audit-panel').classList.remove('hidden');
+            updateUI();
+            setTimeout(() => document.getElementById('c-name').focus(), 100);
+        } else alert("Access Denied");
+    }
+
+    async function submitVisit() {
+        const proj = document.getElementById('proj-select').value;
+        const client = document.getElementById('c-name').value;
+        const phone = document.getElementById('c-phone').value;
+        const date = document.getElementById('c-date').value;
+        const pax = parseInt(document.getElementById('c-pax').value) || 0;
+        const foodPref = document.getElementById('c-food').value;
+        
+        if(!client || !date || !phone) { alert("Fill Name, Phone & Date"); return; }
+
+        const newVisit = {
+            id: Date.now(), manager: session.name, mgrId: session.id, color: session.color,
+            proj, client, phone, pax, foodPref, date,
+            unitType: proj === 'Sannidhi' ? document.getElementById('c-unit').value : 'Visit',
+            status: 'Not Visited', pmComment: ''
+        };
+
+        visits.push(newVisit);
+
+        if (isSupabaseConnected) {
+            await supabaseClient.from('visits').insert([{
+                id: newVisit.id, manager: newVisit.manager, mgr_id: newVisit.mgrId,
+                color: newVisit.color, proj: newVisit.proj, client: newVisit.client,
+                phone: newVisit.phone, pax: newVisit.pax, food_pref: newVisit.foodPref,
+                date: newVisit.date, unit_type: newVisit.unitType, status: newVisit.status
+            }]);
+        }
+        
+        save(); updateUI();
+        document.getElementById('c-name').value = ''; document.getElementById('c-phone').value = ''; 
+        document.getElementById('c-pax').value = ''; document.getElementById('c-name').focus();
+    }
+
+    async function updateStatus(id) {
+        const v = visits.find(v => v.id === id);
+        const actionBtn = document.getElementById('modal-action-btn');
+        document.getElementById('modal-title').innerText = "Add Visit Log";
+        actionBtn.style.display = 'flex';
+        actionBtn.innerText = "Save Log";
+        document.getElementById('modal-body').innerHTML = `<textarea id="pm-comment-input" style="width:100%; height:120px; border-radius:15px; padding:15px;">${v.pmComment || ''}</textarea>`;
+        
+        actionBtn.onclick = async () => {
+            const comment = document.getElementById('pm-comment-input').value;
+            v.pmComment = comment;
+            v.status = 'Visited';
+            if (isSupabaseConnected) {
+                await supabaseClient.from('visits').update({ pm_comment: comment, status: 'Visited' }).eq('id', id);
+            }
+            save(); updateUI(); closeModal();
+        };
+        document.getElementById('custom-modal').classList.add('modal-active');
+    }
+
+    async function deleteVisit(id) {
+        if(!confirm("Cancel and delete?")) return;
+        visits = visits.filter(v => v.id !== id);
+        if (isSupabaseConnected) await supabaseClient.from('visits').delete().eq('id', id);
+        save(); updateUI();
+    }
+
+    function switchContext(p) { document.getElementById('proj-select').value = p; syncProjectState(p); }
+
+    function syncProjectState(val) {
+        activeContextProj = val;
+        document.getElementById('main-project-heading').innerText = val + " Bookings";
+        const isVV = (val === 'VanaVida');
+        document.getElementById('c-unit').style.display = isVV ? 'none' : 'block';
+        document.getElementById('food-container').style.display = isVV ? 'none' : 'block';
+        document.getElementById('side-inventory-section').style.display = isVV ? 'none' : 'block';
+        document.getElementById('side-kitchen-section').style.display = isVV ? 'none' : 'block';
+        updateUI();
+    }
+
+    function updateUI() {
+        const grid = document.getElementById('cal-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(h => grid.innerHTML += `<div class="cal-head">${h}</div>`);
+        const year = currentViewDate.getFullYear(), month = currentViewDate.getMonth();
+        document.getElementById('calendar-month-year').innerText = `${currentViewDate.toLocaleString('default', {month:'long'})} ${year}`;
+        const first = new Date(year, month, 1).getDay();
+        const days = new Date(year, month + 1, 0).getDate();
+        const offset = first === 0 ? 6 : first - 1;
+        const search = document.getElementById('global-search').value.toLowerCase();
+        for(let i=0; i<offset; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+        for(let d=1; d<=days; d++) {
+            const dStr = `${year}-${(month+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+            const dayVisits = visits.filter(v => v.date === dStr && v.proj === activeContextProj && (v.client.toLowerCase().includes(search) || (v.phone && v.phone.includes(search))));
+            let html = `<div class="cal-day ${dStr === selectedDate ? 'selected' : ''}" onclick="focusDate('${dStr}')"><strong>${d}</strong>`;
+            dayVisits.forEach(v => {
+                const label = getAutoLabel(v, visits);
+                html += `<div class="visit-dot ${label==='WAIT'?'waitlist-tag':''}" style="background:${label==='WAIT'?'':v.color}">${label}: ${v.client.substring(0,8)}</div>`;
+            });
+            grid.innerHTML += html + `</div>`;
+        }
+        refreshSideData();
+    }
+
+    function getAutoLabel(visit, allVisits) {
+        if (visit.proj === 'VanaVida') return 'VV';
+        const dayV = allVisits.filter(v => v.date === visit.date && v.proj === 'Sannidhi').sort((a,b) => a.id - b.id);
+        const units = dayV.filter(v => v.unitType === visit.unitType);
+        const idx = units.findIndex(v => v.id === visit.id);
+        if (visit.unitType === 'Cottage') return idx < 4 ? `C${idx+1}` : 'WAIT';
+        return idx < 1 ? 'G' : 'WAIT';
+    }
+
+    function refreshSideData() {
+        const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+        if(activeContextProj === 'Sannidhi') document.getElementById('date-display-header').innerText = new Date(selectedDate).toLocaleDateString('en-GB', opts);
+        const ctxData = visits.filter(v => v.date === selectedDate && v.proj === activeContextProj);
+        let confirmedPax = 0, vegCount = 0, nvCount = 0;
+        ctxData.forEach(v => {
+            if (getAutoLabel(v, visits) !== 'WAIT') {
+                const p = parseInt(v.pax) || 0; confirmedPax += p;
+                if (v.foodPref === 'Veg') vegCount += p; else if (v.foodPref === 'Non-Veg') nvCount += p;
+            }
+        });
+        document.getElementById('pax-val').innerText = confirmedPax;
+        document.getElementById('veg-val').innerText = vegCount;
+        document.getElementById('nv-val').innerText = nvCount;
+        const bS = document.getElementById('btn-san'), bV = document.getElementById('btn-vv');
+        if(activeContextProj === 'Sannidhi') { 
+            bS.classList.add('active-proj-btn'); bV.classList.remove('active-proj-btn'); 
+            const cB = ctxData.filter(v => v.unitType === 'Cottage' && getAutoLabel(v, visits) !== 'WAIT').length;
+            const gB = ctxData.filter(v => v.unitType === 'Glamp' && getAutoLabel(v, visits) !== 'WAIT').length;
+            document.getElementById('count-c').innerText = `${4 - cB} Available`;
+            document.getElementById('count-g').innerText = `${1 - gB} Available`;
+        } else { bV.classList.add('active-proj-btn'); bS.classList.remove('active-proj-btn'); }
+        
+        document.getElementById('date-info-list').innerHTML = ctxData.map(v => `
+            <div class="visit-card" style="border-left-color:${v.color}" onclick="showFeedbackPrompt(${v.id})">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="font-size:0.8rem;">${getAutoLabel(v, visits)}: ${v.client}</b>
+                    <span class="status-tag" style="background:${v.status==='Visited'?'#4ade8022':'#fbbf2422'}; color:${v.status==='Visited'?'#4ade80':'#fbbf24'}">${v.status}</span>
+                </div>
+                <div style="font-size:0.65rem; color:var(--swasya-green); font-weight:800; margin-top:2px;">${v.phone || ''}</div>
+                <div style="font-size:0.65rem; opacity:0.7;">Pax: ${v.pax} | ${v.manager}</div>
+                <div style="margin-top:8px; display:flex; gap:5px;">
+                    ${(session.id === 'chetan' || session.id === 'hoysala' || session.id === 'akshith') ? `<button class="btn-pill" style="font-size:0.5rem; padding:4px 8px; background:#222; color:white;" onclick="event.stopPropagation(); updateStatus(${v.id})">LOG</button>` : ''}
+                    ${(v.mgrId === session.id || session.id === 'akshith') ? `<button class="btn-pill" style="font-size:0.5rem; padding:4px 8px; background:#fee2e2; color:#ef4444;" onclick="event.stopPropagation(); deleteVisit(${v.id})">DELETE</button>` : ''}
+                </div>
+            </div>`).join('') || '<p style="opacity:0.4; text-align:center; padding:20px; font-size:0.8rem;">No visits found.</p>';
+    }
+
+    async function openAddUserModal() {
+        const modalBody = document.getElementById('modal-body');
+        const actionBtn = document.getElementById('modal-action-btn');
+        document.getElementById('modal-title').innerText = "Team Management";
+        actionBtn.innerText = "Add Member";
+        let userListHtml = TEAM.map(t => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee; font-size:0.8rem;">
+                <span><b>${t.name}</b> (${t.role})</span>
+                ${t.id !== 'akshith' ? `<button onclick="deleteUser('${t.id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:0.7rem; font-weight:800;">REMOVE</button>` : ''}
+            </div>`).join('');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:15px;">
+                <label style="font-size:0.6rem; font-weight:800; color:var(--accent-gold); display:block; margin-bottom:10px;">REGISTER NEW STAFF</label>
+                <input type="text" id="new-name" placeholder="Full Name" style="width:100%; margin-bottom:10px;">
+                <input type="text" id="new-id" placeholder="Username" style="width:100%; margin-bottom:10px;">
+                <select id="new-role" style="width:100%;">
+                    <option value="Sales Manager">Sales Manager</option>
+                    <option value="Project Manager">Project Manager</option>
+                    <option value="CRM">CRM</option>
+                </select>
+            </div>
+            <label style="font-size:0.6rem; font-weight:800; color:var(--accent-gold); display:block; margin-bottom:10px;">EXISTING TEAM</label>
+            <div>${userListHtml}</div>`;
+        
+        actionBtn.onclick = async () => {
+            const name = document.getElementById('new-name').value;
+            const id = document.getElementById('new-id').value.toLowerCase().trim();
+            const role = document.getElementById('new-role').value;
+            if(!name || !id) return;
+            if(TEAM.find(t => t.id === id)) return alert("Username exists");
+            const colors = ["#2c3e50", "#8e44ad", "#2980b9", "#27ae60", "#d35400", "#c0392b"];
+            const newUser = {id, name, role, color: colors[Math.floor(Math.random()*colors.length)]};
+            TEAM.push(newUser);
+            if (isSupabaseConnected) await supabaseClient.from('team').insert([newUser]);
+            localStorage.setItem('swasya_team_v2', JSON.stringify(TEAM));
+            openAddUserModal();
+        };
+        document.getElementById('custom-modal').classList.add('modal-active');
+        document.getElementById('custom-modal').classList.remove('hidden');
+    }
+
+    async function deleteUser(id) {
+        if(!confirm("Remove user?")) return;
+        TEAM = TEAM.filter(t => t.id !== id);
+        if (isSupabaseConnected) await supabaseClient.from('team').delete().eq('id', id);
+        localStorage.setItem('swasya_team_v2', JSON.stringify(TEAM));
+        openAddUserModal();
+    }
+
+    function showFeedbackPrompt(id) {
+        const v = visits.find(v => v.id === id);
+        const modalBody = document.getElementById('modal-body');
+        document.getElementById('modal-title').innerText = v.client;
+        document.getElementById('modal-subtitle').innerText = "Visit Detail";
+        document.getElementById('modal-action-btn').style.display = 'none';
+        let foodHtml = v.proj === 'Sannidhi' ? `<div style="grid-column: span 2; background: #fdfdfd; padding: 10px; border-radius: 12px; border: 1px dashed #eee;">
+            <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CATERING REQ.</label>
+            <div style="font-weight:700;">${v.foodPref || 'Not specified'}</div>
+        </div>` : '';
+        modalBody.innerHTML = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PROJECT</label><div style="font-weight:700;">${v.proj}</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">STATUS</label><div style="font-weight:700;">${v.status}</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PHONE</label><div style="font-weight:700; color:var(--swasya-green);">${v.phone || 'N/A'}</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">MANAGER</label><div style="font-weight:700;">${v.manager}</div></div>
+                ${foodHtml}
+            </div>
+            <div style="margin-top:20px; border-top:1px solid #EEE; padding-top:15px;">
+                <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">SITE VISIT NOTES</label>
+                <div style="font-size:0.9rem; background:#F1F5F9; padding:15px; border-radius:12px; margin-top:5px;">${v.pmComment || "No logs yet."}</div>
+            </div>`;
+        document.getElementById('custom-modal').classList.add('modal-active');
+        document.getElementById('custom-modal').classList.remove('hidden');
+    }
+
+    function save() { localStorage.setItem('swasya_v96', JSON.stringify(visits)); }
+    function changeMonth(dir) { currentViewDate.setMonth(currentViewDate.getMonth() + dir); updateUI(); }
+    function focusDate(date) { selectedDate = date; document.getElementById('c-date').value = date; updateUI(); }
+    function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); document.getElementById('custom-modal').classList.remove('modal-active'); }
+    
+    function exportAuditToExcel() {
+        let csv = "Date,Client,Phone,Pax,FoodPreference,Unit,Project,Manager,Status,PM Comment\n";
+        visits.forEach(v => { csv += `${v.date},${v.client},${v.phone},${v.pax},${v.foodPref || 'N/A'},${v.unitType},${v.proj},${v.manager},${v.status},"${(v.pmComment || '').replace(/"/g, '""')}"\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `Swasya_Audit_2026.csv`; a.click();
+    }
+</script>
+</body>
+</html>
