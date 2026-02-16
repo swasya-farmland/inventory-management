@@ -181,7 +181,10 @@
                 </select>
             </div>
 
-            <select id="c-unit" style="flex: 1;" tabindex="5"><option value="Cottage">Cottage</option><option value="Glamp">Glamp</option></select>
+            <select id="c-unit" style="flex: 1;" tabindex="5">
+                <option value="Cottage">Cottage</option>
+                <option value="Glamp">Glamp</option>
+                <option value="Day Visit">Day Visit</option> </select>
             <input type="date" id="c-date" style="flex: 1; min-width: 130px;" tabindex="6">
             <button class="btn-pill btn-green" onclick="submitVisit()" style="padding: 12px 25px;" tabindex="7">Book</button>
         </div>
@@ -214,11 +217,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     // --- SUPABASE CONFIGURATION ---
-    // 1. Replace these with your actual details from Supabase Settings -> API
     const SUPABASE_URL = 'https://aoqmhifliyrzuqmutoip.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcW1oaWZsaXlyenVxbXV0b2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNjc4MzQsImV4cCI6MjA4NTk0MzgzNH0.A4yupYqQ37Pg_VO85cwDsTgW5gFGpU9pJV7GKQTO3Ak';
     
-    // RENAMED TO supabaseClient TO AVOID THE SYNTAX ERROR
     let supabaseClient = null;
     if (SUPABASE_URL !== 'YOUR_SUPABASE_PUBLIC_URL') {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -294,7 +295,6 @@
             document.getElementById('sidebar').classList.remove('hidden');
             document.getElementById('main-area').classList.remove('hidden');
             
-            // Add Color Dot next to Name
             const dotColor = isSupabaseConnected ? '#4ade80' : '#f87171';
             const statusDot = `<span title="${isSupabaseConnected?'Connected':'Offline'}" style="height:10px; width:10px; background:${dotColor}; border-radius:50%; display:inline-block; margin-left:8px; vertical-align:middle; box-shadow: 0 0 5px ${dotColor}"></span>`;
             
@@ -407,32 +407,49 @@
 
     function getAutoLabel(visit, allVisits) {
         if (visit.proj === 'VanaVida') return 'VV';
+        
+        // Handle Day Visits
+        if (visit.unitType === 'Day Visit') return 'DV'; 
+
         const dayV = allVisits.filter(v => v.date === visit.date && v.proj === 'Sannidhi').sort((a,b) => a.id - b.id);
         const units = dayV.filter(v => v.unitType === visit.unitType);
         const idx = units.findIndex(v => v.id === visit.id);
+        
         if (visit.unitType === 'Cottage') return idx < 4 ? `C${idx+1}` : 'WAIT';
-        return idx < 1 ? 'G' : 'WAIT';
+        if (visit.unitType === 'Glamp') return idx < 1 ? 'G' : 'WAIT';
+        
+        return 'V'; 
     }
 
     function refreshSideData() {
         const opts = { day: 'numeric', month: 'short', year: 'numeric' };
         if(activeContextProj === 'Sannidhi') document.getElementById('date-display-header').innerText = new Date(selectedDate).toLocaleDateString('en-GB', opts);
+        
         const ctxData = visits.filter(v => v.date === selectedDate && v.proj === activeContextProj);
         let confirmedPax = 0, vegCount = 0, nvCount = 0;
+
         ctxData.forEach(v => {
-            if (getAutoLabel(v, visits) !== 'WAIT') {
-                const p = parseInt(v.pax) || 0; confirmedPax += p;
-                if (v.foodPref === 'Veg') vegCount += p; else if (v.foodPref === 'Non-Veg') nvCount += p;
+            const label = getAutoLabel(v, visits);
+            // Day Visits contribute to kitchen load but do not affect inventory
+            if (label !== 'WAIT') {
+                const p = parseInt(v.pax) || 0; 
+                confirmedPax += p;
+                if (v.foodPref === 'Veg') vegCount += p; 
+                else if (v.foodPref === 'Non-Veg') nvCount += p;
             }
         });
+
         document.getElementById('pax-val').innerText = confirmedPax;
         document.getElementById('veg-val').innerText = vegCount;
         document.getElementById('nv-val').innerText = nvCount;
+
         const bS = document.getElementById('btn-san'), bV = document.getElementById('btn-vv');
         if(activeContextProj === 'Sannidhi') { 
             bS.classList.add('active-proj-btn'); bV.classList.remove('active-proj-btn'); 
+            
             const cB = ctxData.filter(v => v.unitType === 'Cottage' && getAutoLabel(v, visits) !== 'WAIT').length;
             const gB = ctxData.filter(v => v.unitType === 'Glamp' && getAutoLabel(v, visits) !== 'WAIT').length;
+            
             document.getElementById('count-c').innerText = `${4 - cB} Available`;
             document.getElementById('count-g').innerText = `${1 - gB} Available`;
         } else { bV.classList.add('active-proj-btn'); bS.classList.remove('active-proj-btn'); }
