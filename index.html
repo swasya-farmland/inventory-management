@@ -98,8 +98,8 @@
         <img src="Swasya Logo 10.png" alt="Swasya Logo" class="sys-logo">
         <h2 style="color:white; margin-bottom:10px; font-weight:800; letter-spacing: 1px;">INVENTORY</h2>
         <h3 style="color:var(--accent-gold); margin-bottom:30px; font-weight:400; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 4px;">Management Portal</h3>
-        <input type="text" id="username" placeholder="Username" style="width: 100%; margin-bottom: 15px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="password" id="password" placeholder="Password" style="width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="username" placeholder="Username" style="width: 100%; margin-bottom: 15px; background: rgba(255,255,255,0.1; color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="password" id="password" placeholder="Password" style="width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.1; color: white; border: 1px solid rgba(255,255,255,0.2);">
         <button class="btn-pill btn-green" style="width: 100%; padding: 18px; letter-spacing: 2px;" onclick="doLogin()">Authenticate</button>
         <p style="color: rgba(255,255,255,0.4); font-size: 0.65rem; margin-top: 25px; font-weight: 600;">SECURED BY SWASYA ECOSYSTEM 2026</p>
     </div>
@@ -229,9 +229,9 @@
         {id: "nijish", name: "Nijish", role: "Founder", color: "#2c3e50"}, {id: "ashrith", name: "Ashrith", role: "Founder", color: "#8e44ad"},
         {id: "avinash", name: "Avinash", role: "Founder", color: "#2980b9"}, {id: "akshith", name: "Akshith", role: "AVP", color: "#d35400"},
         {id: "sandeep", name: "Sandeep", role: "Sales Manager", color: "#27ae60"}, {id: "sharan", name: "Sharan", role: "Sales Manager", color: "#c0392b"},
-        {id: "hema", name: "Hema", role: "Sales Manager", color: "#16a085"}, {id: "apeksh", name: "Apeksh", role: "Sales Manager", color: "#f39c12"},
-        {id: "sandhya", name: "Sandhya", role: "CRM", color: "#7f8c8d"}, {id: "hoysala", name: "Hoysala", role: "Project Manager", color: "#34495e"},
-        {id: "chetan", name: "Chetan", role: "Project Manager", color: "#444"}
+        {id: "hema", name: "Hema", role: "Sales Manager", color: "#16a085"}, {id: "apeksh", name: "Apeksh", role: "Project Manager", color: "#f39c12"},
+        {id: "sandhya", name: "Sandhya", role: "CRM", color: "#7f8c8d"}, {id: "chetan", name: "Chetan", role: "Project Manager", color: "#444"},
+        {id: "aryan", name: "Aryan", role: "Project Manager", color: "#6c5ce7"}
     ];
 
     let TEAM = JSON.parse(localStorage.getItem('swasya_team_v2')) || INITIAL_TEAM;
@@ -284,10 +284,10 @@
 
     function doLogin() {
         const u = document.getElementById('username').value.toLowerCase().trim();
-        const p = document.getElementById('password').value;
+        const p = document.getElementById('password').value.trim();
         const user = TEAM.find(t => t.id === u);
         
-        let isValid = (user && (u === "akshith" ? p === "swasyaAdmin1" : p === u + "2026"));
+        let isValid = (user && (u === "akshith" ? p === "swasyaAdmin1" : p.toLowerCase() === u + "2026"));
 
         if(isValid) {
             session = user;
@@ -463,7 +463,7 @@
                 <div style="font-size:0.65rem; color:var(--swasya-green); font-weight:800; margin-top:2px;">${v.phone || ''}</div>
                 <div style="font-size:0.65rem; opacity:0.7;">Pax: ${v.pax} | ${v.manager}</div>
                 <div style="margin-top:8px; display:flex; gap:5px;">
-                    ${(session.id === 'chetan' || session.id === 'hoysala' || session.id === 'akshith') ? `<button class="btn-pill" style="font-size:0.5rem; padding:4px 8px; background:#222; color:white;" onclick="event.stopPropagation(); updateStatus(${v.id})">LOG</button>` : ''}
+                    ${(session.id === 'chetan' || session.id === 'hoysala' || session.id === 'apeksh' || session.id === 'aryan' || session.id === 'akshith') ? `<button class="btn-pill" style="font-size:0.5rem; padding:4px 8px; background:#222; color:white;" onclick="event.stopPropagation(); updateStatus(${v.id})">LOG</button>` : ''}
                     ${(v.mgrId === session.id || session.id === 'akshith') ? `<button class="btn-pill" style="font-size:0.5rem; padding:4px 8px; background:#fee2e2; color:#ef4444;" onclick="event.stopPropagation(); deleteVisit(${v.id})">DELETE</button>` : ''}
                 </div>
             </div>`).join('') || '<p style="opacity:0.4; text-align:center; padding:20px; font-size:0.8rem;">No visits found.</p>';
