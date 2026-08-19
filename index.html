@@ -225,13 +225,16 @@
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
 
-    const INITIAL_TEAM = [
+   const INITIAL_TEAM = [
         {id: "nijish", name: "Nijish", role: "Founder", color: "#2c3e50"}, {id: "ashrith", name: "Ashrith", role: "Founder", color: "#8e44ad"},
         {id: "avinash", name: "Avinash", role: "Founder", color: "#2980b9"}, {id: "akshith", name: "Akshith", role: "AVP", color: "#d35400"},
         {id: "sandeep", name: "Sandeep", role: "Sales Manager", color: "#27ae60"}, {id: "sharan", name: "Sharan", role: "Sales Manager", color: "#c0392b"},
         {id: "hema", name: "Hema", role: "Sales Manager", color: "#16a085"}, {id: "apeksh", name: "Apeksh", role: "Project Manager", color: "#f39c12"},
         {id: "sandhya", name: "Sandhya", role: "CRM", color: "#7f8c8d"}, {id: "chetan", name: "Chetan", role: "Project Manager", color: "#444"},
-        {id: "aryan", name: "Aryan", role: "Project Manager", color: "#6c5ce7"}
+        {id: "aryan", name: "Aryan", role: "Project Manager", color: "#6c5ce7"},
+        {id: "ashwathy", name: "Ashwathy", role: "Junior CRM", color: "#16a085"},
+        {id: "manoj", name: "Manoj", role: "Junior Project Manager", color: "#e67e22"},
+        {id: "suraj", name: "Suraj", role: "Junior Project Manager", color: "#e74c3c"}
     ];
 
     let TEAM = JSON.parse(localStorage.getItem('swasya_team_v2')) || INITIAL_TEAM;
