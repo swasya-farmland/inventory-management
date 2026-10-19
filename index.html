@@ -59,7 +59,7 @@
         .load-row:last-child { margin-bottom: 0; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); }
         .load-val { color: var(--accent-gold); font-weight: 800; }
 
-        .visit-card { background: rgba(255,255,255,0.08); padding: 15px; margin-bottom: 12px; border-radius: 18px; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s; }
+        .visit-card { background: rgba(255,255,255,0.08); padding: 15px; margin-bottom: 12px; border-radius: 18px; border-left: 4px solid transparent; cursor: pointer; transition: 0.2s; position: relative; }
         .visit-card:hover { background: rgba(255,255,255,0.12); }
         .status-tag { font-size: 0.55rem; font-weight: 900; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
 
@@ -89,6 +89,8 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
         .sb-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); }
+        
+        .linkedin-link { position: absolute; right: 15px; top: 35px; color: #0A66C2; background: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; text-decoration: none; font-weight: bold; font-size: 12px; }
     </style>
 </head>
 <body onkeydown="handleGlobalKey(event)">
@@ -98,8 +100,8 @@
         <img src="Swasya Logo 10.png" alt="Swasya Logo" class="sys-logo">
         <h2 style="color:white; margin-bottom:10px; font-weight:800; letter-spacing: 1px;">INVENTORY</h2>
         <h3 style="color:var(--accent-gold); margin-bottom:30px; font-weight:400; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 4px;">Management Portal</h3>
-        <input type="text" id="username" placeholder="Username" style="width: 100%; margin-bottom: 15px; background: rgba(255,255,255,0.1; color: white; border: 1px solid rgba(255,255,255,0.2);">
-        <input type="password" id="password" placeholder="Password" style="width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.1; color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="text" id="username" placeholder="Username" style="width: 100%; margin-bottom: 15px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        <input type="password" id="password" placeholder="Password" style="width: 100%; margin-bottom: 25px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
         <button class="btn-pill btn-green" style="width: 100%; padding: 18px; letter-spacing: 2px;" onclick="doLogin()">Authenticate</button>
         <p style="color: rgba(255,255,255,0.4); font-size: 0.65rem; margin-top: 25px; font-weight: 600;">SECURED BY SWASYA ECOSYSTEM 2026</p>
     </div>
@@ -161,6 +163,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <h3 id="main-project-heading" style="margin:0; color: var(--swasya-green); font-weight: 800; font-size: 1.5rem;">Sannidhi Eco Farm Bookings</h3>
             <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="live-pricing-display" style="font-weight:800; color:var(--accent-gold); padding-right:15px;"></div>
                 <input type="text" id="global-search" placeholder="🔍 Search Name/Phone..." oninput="updateUI()" style="width: 250px; border: 2px solid var(--swasya-green);">
                 <select id="proj-select" onchange="syncProjectState(this.value)" style="font-weight: 800;">
                     <option value="Sannidhi">Sannidhi Eco Farms</option>
@@ -170,23 +173,46 @@
         </div>
 
         <div style="display: flex; flex-wrap: wrap; gap: 10px; background: #F8FAFC; padding: 18px; border-radius: 30px; border: 1px solid #E2E8F0; align-items: center;">
-            <input type="text" id="c-name" placeholder="Client Name" style="flex: 1.5; min-width: 150px;" tabindex="1">
-            <input type="text" id="c-phone" placeholder="Phone Number" style="flex: 1.2; min-width: 130px;" tabindex="2">
-            <input type="number" id="c-pax" placeholder="Pax" style="width: 65px;" tabindex="3">
+            <input type="text" id="c-name" placeholder="Client Name *" style="flex: 1.5; min-width: 140px;">
+            <input type="text" id="c-phone" placeholder="Phone Number *" style="flex: 1.2; min-width: 120px;">
+            <input type="url" id="c-linkedin" placeholder="LinkedIn URL *" style="flex: 1.2; min-width: 120px;">
             
+            <select id="c-cust-type" style="width: 140px; font-weight: 600;" onchange="calculatePrice()">
+                <option value="New">New Visit</option>
+                <option value="Existing">Existing Customer</option>
+            </select>
+            
+            <input type="number" id="c-pax" placeholder="Adults *" style="width: 75px;" oninput="calculatePrice()">
+            <input type="number" id="c-kids" placeholder="Kids *" style="width: 75px;" oninput="calculatePrice()">
+            
+            <input type="date" id="c-checkin" style="width: 130px;" onchange="updateCheckOutMin(); calculatePrice();">
+            <input type="date" id="c-checkout" style="width: 130px;" onchange="calculatePrice()">
+
+            <input type="number" id="c-collected" placeholder="Collected (₹) *" style="width: 110px;" oninput="calculatePrice()">
+            <input type="number" id="c-pending" placeholder="Pending (₹)" style="width: 100px; background: #f1f5f9;" readonly>
+
             <div id="food-container">
-                <select id="c-food" style="width: 110px;" tabindex="4">
+                <select id="c-food" style="width: 100px;">
                     <option value="Veg">Veg Only</option>
                     <option value="Non-Veg">Non-Veg</option>
                 </select>
             </div>
 
-            <select id="c-unit" style="flex: 1;" tabindex="5">
+            <select id="c-unit" style="flex: 1;" onchange="updateUnitOptions()">
                 <option value="Cottage">Cottage</option>
                 <option value="Glamp">Glamp</option>
-                <option value="Day Visit">Day Visit</option> </select>
-            <input type="date" id="c-date" style="flex: 1; min-width: 130px;" tabindex="6">
-            <button class="btn-pill btn-green" onclick="submitVisit()" style="padding: 12px 25px;" tabindex="7">Book</button>
+                <option value="All">All (Entire Property)</option>
+                <option value="Day Visit">Day Visit</option> 
+            </select>
+            
+            <select id="c-unit-count" style="width: 95px;">
+                <option value="1">1 Unit</option>
+                <option value="2">2 Units</option>
+                <option value="3">3 Units</option>
+                <option value="4">4 Units</option>
+            </select>
+
+            <button class="btn-pill btn-green" onclick="submitVisit()" style="padding: 12px 25px;">Book</button>
         </div>
     </header>
 
@@ -201,12 +227,12 @@
 </div>
 
 <div id="custom-modal" class="hidden" style="position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: white; width: 100%; max-width: 450px; border-radius: 32px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+    <div style="background: white; width: 100%; max-width: 480px; border-radius: 32px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
         <div id="modal-header" style="background: var(--sidebar-dark); padding: 25px; color: white;">
             <span id="modal-subtitle" style="color: var(--accent-gold); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">Portal Action</span>
             <h2 id="modal-title" style="margin: 5px 0 0 0; font-size: 1.4rem; font-weight: 800;">Title</h2>
         </div>
-        <div id="modal-body" style="padding: 30px; color: #334155; max-height: 400px; overflow-y: auto;"></div>
+        <div id="modal-body" style="padding: 30px; color: #334155; max-height: 450px; overflow-y: auto;"></div>
         <div id="modal-footer" style="padding: 20px 30px; background: #F8FAFC; display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn-pill" style="background: #E2E8F0; color: #64748B;" onclick="closeModal()">Close</button>
             <button id="modal-action-btn" class="btn-pill btn-green">Confirm</button>
@@ -216,7 +242,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = 'https://aoqmhifliyrzuqmutoip.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcW1oaWZsaXlyenVxbXV0b2lwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNjc4MzQsImV4cCI6MjA4NTk0MzgzNH0.A4yupYqQ37Pg_VO85cwDsTgW5gFGpU9pJV7GKQTO3Ak';
     
@@ -239,13 +264,12 @@
 
     let TEAM = JSON.parse(localStorage.getItem('swasya_team_v2')) || INITIAL_TEAM;
     let session = null;
-    let visits = JSON.parse(localStorage.getItem('swasya_v96')) || [];
+    let visits = JSON.parse(localStorage.getItem('swasya_v101')) || [];
     let selectedDate = new Date().toISOString().split('T')[0];
     let currentViewDate = new Date();
     let activeContextProj = 'Sannidhi';
     let isSupabaseConnected = false;
 
-    // --- DATABASE SYNC LOGIC ---
     async function initSupabase() {
         if (!supabaseClient) return;
         try {
@@ -259,9 +283,11 @@
             if (visitData) {
                 visits = visitData.map(v => ({
                     id: v.id, manager: v.manager, mgrId: v.mgr_id, color: v.color,
-                    proj: v.proj, client: v.client, phone: v.phone, pax: v.pax,
-                    foodPref: v.food_pref, date: v.date, unitType: v.unit_type,
-                    status: v.status, pmComment: v.pm_comment
+                    proj: v.proj, client: v.client, phone: v.phone, pax: v.pax, adults: v.adults, kids: v.kids,
+                    foodPref: v.food_pref, date: v.date, checkIn: v.check_in, checkOut: v.check_out, unitType: v.unit_type,
+                    status: v.status, pmComment: v.pm_comment,
+                    linkedin: v.linkedin, collected: v.collected, pending: v.pending, unitsCount: v.units_count,
+                    custType: v.cust_type, totalCost: v.total_cost, nights: v.nights
                 }));
             }
             isSupabaseConnected = true;
@@ -274,13 +300,84 @@
 
     initSupabase();
 
+    function updateCheckOutMin() {
+        const inDate = document.getElementById('c-checkin').value;
+        if(inDate) {
+            const nextDay = new Date(inDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const outStr = nextDay.toISOString().split('T')[0];
+            document.getElementById('c-checkout').min = outStr;
+            if(!document.getElementById('c-checkout').value || document.getElementById('c-checkout').value <= inDate) {
+                document.getElementById('c-checkout').value = outStr;
+            }
+        }
+    }
+
+    function updateUnitOptions() {
+        const type = document.getElementById('c-unit').value;
+        const countSelect = document.getElementById('c-unit-count');
+        
+        if (type === 'Cottage') {
+            countSelect.style.display = 'block';
+            countSelect.innerHTML = `
+                <option value="1">1 Unit</option>
+                <option value="2">2 Units</option>
+                <option value="3">3 Units</option>
+                <option value="4">4 Units</option>`;
+        } else if (type === 'Glamp') {
+            countSelect.style.display = 'block';
+            countSelect.innerHTML = `<option value="1">1 Unit</option>`;
+        } else if (type === 'All') {
+            countSelect.style.display = 'block';
+            countSelect.innerHTML = `<option value="5">All Units (4C + 1G)</option>`;
+        } else {
+            countSelect.style.display = 'none';
+        }
+    }
+
+    function calculateNights() {
+        const inStr = document.getElementById('c-checkin').value;
+        const outStr = document.getElementById('c-checkout').value;
+        if (inStr && outStr) {
+            const dIn = new Date(inStr);
+            const dOut = new Date(outStr);
+            const diffTime = dOut - dIn;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 1;
+        }
+        return 1;
+    }
+
+    function calculatePrice() {
+        const type = document.getElementById('c-cust-type').value;
+        const adults = parseInt(document.getElementById('c-pax').value) || 0;
+        const kids = parseInt(document.getElementById('c-kids').value) || 0;
+        const nights = calculateNights();
+        const collected = parseFloat(document.getElementById('c-collected').value) || 0;
+
+        let total = 0;
+        if (type === 'Existing') {
+            total = (adults + kids) * 2500 * nights;
+        } else {
+            const firstNightAdults = adults * 1500;
+            const extraNightsAdults = adults * 2500 * (nights - 1);
+            
+            const firstNightKids = kids * 1000;
+            const extraNightsKids = kids * 1250 * (nights - 1);
+            
+            total = firstNightAdults + extraNightsAdults + firstNightKids + extraNightsKids;
+        }
+
+        const pending = Math.max(0, total - collected);
+        document.getElementById('c-pending').value = pending;
+        document.getElementById('live-pricing-display').innerText = `Total: ₹${total.toLocaleString('en-IN')} (${nights} Night${nights > 1 ? 's' : ''})`;
+        return total;
+    }
+
     function handleGlobalKey(e) {
         if (e.key === 'Enter') {
             if (!document.getElementById('login-screen').classList.contains('hidden')) {
                 doLogin();
-            } else {
-                const activeEl = document.activeElement;
-                if (['c-name', 'c-phone', 'c-pax', 'c-food', 'c-unit', 'c-date'].includes(activeEl.id)) submitVisit();
             }
         }
     }
@@ -289,7 +386,6 @@
         const u = document.getElementById('username').value.toLowerCase().trim();
         const p = document.getElementById('password').value.trim();
         const user = TEAM.find(t => t.id === u);
-        
         let isValid = (user && (u === "akshith" ? p === "swasyaAdmin1" : p.toLowerCase() === u + "2026"));
 
         if(isValid) {
@@ -303,10 +399,13 @@
             
             document.getElementById('u-name').innerHTML = user.name + statusDot;
             document.getElementById('u-role').innerText = user.role;
-            document.getElementById('c-date').value = selectedDate;
+            
+            document.getElementById('c-checkin').value = selectedDate;
+            updateCheckOutMin();
+            updateUnitOptions();
+
             if(u === "akshith") document.getElementById('audit-panel').classList.remove('hidden');
             updateUI();
-            setTimeout(() => document.getElementById('c-name').focus(), 100);
         } else alert("Access Denied");
     }
 
@@ -314,16 +413,37 @@
         const proj = document.getElementById('proj-select').value;
         const client = document.getElementById('c-name').value;
         const phone = document.getElementById('c-phone').value;
-        const date = document.getElementById('c-date').value;
-        const pax = parseInt(document.getElementById('c-pax').value) || 0;
-        const foodPref = document.getElementById('c-food').value;
+        const checkIn = document.getElementById('c-checkin').value;
+        const checkOut = document.getElementById('c-checkout').value;
         
-        if(!client || !date || !phone) { alert("Fill Name, Phone & Date"); return; }
+        const adults = parseInt(document.getElementById('c-pax').value) || 0;
+        const kids = parseInt(document.getElementById('c-kids').value) || 0;
+        const totalPax = adults + kids;
+
+        const linkedin = document.getElementById('c-linkedin').value;
+        const collected = document.getElementById('c-collected').value;
+        const pending = document.getElementById('c-pending').value;
+        const foodPref = document.getElementById('c-food').value;
+        const custType = document.getElementById('c-cust-type').value;
+        const nights = calculateNights();
+        const totalCost = calculatePrice();
+        
+        const unitType = proj === 'Sannidhi' ? document.getElementById('c-unit').value : 'Visit';
+        let unitsCount = 1;
+        if (unitType === 'Cottage') unitsCount = parseInt(document.getElementById('c-unit-count').value);
+        else if (unitType === 'All') unitsCount = 5;
+
+        if(!client || !phone || !linkedin || !checkIn || !checkOut || collected === "") { 
+            alert("Mandatory Fields Missing: Name, Phone, LinkedIn, Check-in, Check-out, and Collected are required."); return; 
+        }
+        if (totalPax <= 1) {
+            alert("Error: Total Pax (Adults + Kids) must be more than 1."); return;
+        }
 
         const newVisit = {
             id: Date.now(), manager: session.name, mgrId: session.id, color: session.color,
-            proj, client, phone, pax, foodPref, date,
-            unitType: proj === 'Sannidhi' ? document.getElementById('c-unit').value : 'Visit',
+            proj, client, phone, pax: totalPax, adults, kids, foodPref, date: checkIn, checkIn, checkOut,
+            unitType, unitsCount, linkedin, collected, pending, custType, totalCost, nights,
             status: 'Not Visited', pmComment: ''
         };
 
@@ -333,14 +453,18 @@
             await supabaseClient.from('visits').insert([{
                 id: newVisit.id, manager: newVisit.manager, mgr_id: newVisit.mgrId,
                 color: newVisit.color, proj: newVisit.proj, client: newVisit.client,
-                phone: newVisit.phone, pax: newVisit.pax, food_pref: newVisit.foodPref,
-                date: newVisit.date, unit_type: newVisit.unitType, status: newVisit.status
+                phone: newVisit.phone, pax: newVisit.pax, adults: newVisit.adults, kids: newVisit.kids,
+                food_pref: newVisit.foodPref, date: newVisit.date, check_in: newVisit.checkIn, check_out: newVisit.checkOut, 
+                unit_type: newVisit.unitType, status: newVisit.status, linkedin: newVisit.linkedin, collected: newVisit.collected, 
+                pending: newVisit.pending, units_count: newVisit.unitsCount, cust_type: newVisit.custType, total_cost: newVisit.totalCost, nights: newVisit.nights
             }]);
         }
         
         save(); updateUI();
         document.getElementById('c-name').value = ''; document.getElementById('c-phone').value = ''; 
-        document.getElementById('c-pax').value = ''; document.getElementById('c-name').focus();
+        document.getElementById('c-pax').value = ''; document.getElementById('c-kids').value = ''; 
+        document.getElementById('c-linkedin').value = ''; document.getElementById('c-collected').value = ''; 
+        document.getElementById('c-pending').value = ''; document.getElementById('live-pricing-display').innerText = '';
     }
 
     async function updateStatus(id) {
@@ -377,10 +501,20 @@
         document.getElementById('main-project-heading').innerText = val + " Bookings";
         const isVV = (val === 'VanaVida');
         document.getElementById('c-unit').style.display = isVV ? 'none' : 'block';
+        document.getElementById('c-unit-count').style.display = isVV ? 'none' : 'block'; 
         document.getElementById('food-container').style.display = isVV ? 'none' : 'block';
         document.getElementById('side-inventory-section').style.display = isVV ? 'none' : 'block';
         document.getElementById('side-kitchen-section').style.display = isVV ? 'none' : 'block';
         updateUI();
+    }
+
+    // Returns true if date targetDate falls in stay [checkIn, checkOut)
+    function isDateInStayRange(targetDate, checkIn, checkOut) {
+        if (!checkIn) return false;
+        const target = new Date(targetDate);
+        const start = new Date(checkIn);
+        const end = checkOut ? new Date(checkOut) : new Date(start.getTime() + 86400000);
+        return target >= start && target < end;
     }
 
     function updateUI() {
@@ -394,51 +528,102 @@
         const days = new Date(year, month + 1, 0).getDate();
         const offset = first === 0 ? 6 : first - 1;
         const search = document.getElementById('global-search').value.toLowerCase();
+        
         for(let i=0; i<offset; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
         for(let d=1; d<=days; d++) {
             const dStr = `${year}-${(month+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-            const dayVisits = visits.filter(v => v.date === dStr && v.proj === activeContextProj && (v.client.toLowerCase().includes(search) || (v.phone && v.phone.includes(search))));
+            
+            // Get all bookings spanning across this target calendar date
+            const dayVisits = visits.filter(v => 
+                isDateInStayRange(dStr, v.checkIn || v.date, v.checkOut) &&
+                v.proj === activeContextProj && 
+                (v.client.toLowerCase().includes(search) || (v.phone && v.phone.includes(search)))
+            );
+
             let html = `<div class="cal-day ${dStr === selectedDate ? 'selected' : ''}" onclick="focusDate('${dStr}')"><strong>${d}</strong>`;
+            
             dayVisits.forEach(v => {
-                const label = getAutoLabel(v, visits);
-                html += `<div class="visit-dot ${label==='WAIT'?'waitlist-tag':''}" style="background:${label==='WAIT'?'':v.color}">${label}: ${v.client.substring(0,8)}</div>`;
+                const unitDots = getAssignedUnitDots(v, visits, dStr);
+                unitDots.forEach(unitBadge => {
+                    const isWait = unitBadge.includes('WAIT');
+                    html += `<div class="visit-dot ${isWait?'waitlist-tag':''}" style="background:${isWait?'':v.color}">${unitBadge}: ${v.client.substring(0,8)}</div>`;
+                });
             });
             grid.innerHTML += html + `</div>`;
         }
         refreshSideData();
     }
 
-    function getAutoLabel(visit, allVisits) {
-        if (visit.proj === 'VanaVida') return 'VV';
-        
-        // Handle Day Visits
-        if (visit.unitType === 'Day Visit') return 'DV'; 
+    // Calculates and individualizes unit dots (C1, C2, C3, C4, G) dynamically per date
+    function getAssignedUnitDots(visit, allVisits, targetDate) {
+        if (visit.proj === 'VanaVida') return ['VV'];
+        if (visit.unitType === 'Day Visit') return ['DV']; 
 
-        const dayV = allVisits.filter(v => v.date === visit.date && v.proj === 'Sannidhi').sort((a,b) => a.id - b.id);
-        const units = dayV.filter(v => v.unitType === visit.unitType);
-        const idx = units.findIndex(v => v.id === visit.id);
-        
-        if (visit.unitType === 'Cottage') return idx < 4 ? `C${idx+1}` : 'WAIT';
-        if (visit.unitType === 'Glamp') return idx < 1 ? 'G' : 'WAIT';
-        
-        return 'V'; 
+        // Get all visits active on targetDate for Sannidhi
+        const activeVisits = allVisits.filter(v => 
+            v.proj === 'Sannidhi' && isDateInStayRange(targetDate, v.checkIn || v.date, v.checkOut)
+        ).sort((a,b) => a.id - b.id);
+
+        if (visit.unitType === 'All') {
+            return ['C1', 'C2', 'C3', 'C4', 'G'];
+        }
+
+        if (visit.unitType === 'Cottage') {
+            let cottageCounter = 0;
+            let assignedUnits = [];
+            const countRequested = visit.unitsCount || 1;
+
+            for (let b of activeVisits) {
+                let unitsForThisBooking = 0;
+                if (b.unitType === 'Cottage') unitsForThisBooking = b.unitsCount || 1;
+                else if (b.unitType === 'All') unitsForThisBooking = 4;
+
+                if (b.id === visit.id) {
+                    for (let i = 0; i < countRequested; i++) {
+                        cottageCounter++;
+                        if (cottageCounter <= 4) assignedUnits.push(`C${cottageCounter}`);
+                        else assignedUnits.push(`WAIT`);
+                    }
+                    return assignedUnits;
+                } else {
+                    cottageCounter += unitsForThisBooking;
+                }
+            }
+        }
+
+        if (visit.unitType === 'Glamp') {
+            const glampBookings = activeVisits.filter(v => v.unitType === 'Glamp' || v.unitType === 'All');
+            return glampBookings[0] && glampBookings[0].id === visit.id ? ['G'] : ['WAIT'];
+        }
+
+        return ['V'];
     }
 
     function refreshSideData() {
         const opts = { day: 'numeric', month: 'short', year: 'numeric' };
         if(activeContextProj === 'Sannidhi') document.getElementById('date-display-header').innerText = new Date(selectedDate).toLocaleDateString('en-GB', opts);
         
-        const ctxData = visits.filter(v => v.date === selectedDate && v.proj === activeContextProj);
+        const ctxData = visits.filter(v => 
+            isDateInStayRange(selectedDate, v.checkIn || v.date, v.checkOut) && 
+            v.proj === activeContextProj
+        );
+
         let confirmedPax = 0, vegCount = 0, nvCount = 0;
+        let cB = 0, gB = 0;
 
         ctxData.forEach(v => {
-            const label = getAutoLabel(v, visits);
-            // Day Visits contribute to kitchen load but do not affect inventory
-            if (label !== 'WAIT') {
+            const dots = getAssignedUnitDots(v, visits, selectedDate);
+            const hasConfirmed = dots.some(d => !d.includes('WAIT'));
+            if (hasConfirmed) {
                 const p = parseInt(v.pax) || 0; 
                 confirmedPax += p;
                 if (v.foodPref === 'Veg') vegCount += p; 
                 else if (v.foodPref === 'Non-Veg') nvCount += p;
+
+                dots.forEach(d => {
+                    if (d.startsWith('C')) cB++;
+                    if (d === 'G') gB++;
+                });
             }
         });
 
@@ -449,18 +634,15 @@
         const bS = document.getElementById('btn-san'), bV = document.getElementById('btn-vv');
         if(activeContextProj === 'Sannidhi') { 
             bS.classList.add('active-proj-btn'); bV.classList.remove('active-proj-btn'); 
-            
-            const cB = ctxData.filter(v => v.unitType === 'Cottage' && getAutoLabel(v, visits) !== 'WAIT').length;
-            const gB = ctxData.filter(v => v.unitType === 'Glamp' && getAutoLabel(v, visits) !== 'WAIT').length;
-            
-            document.getElementById('count-c').innerText = `${4 - cB} Available`;
-            document.getElementById('count-g').innerText = `${1 - gB} Available`;
+            document.getElementById('count-c').innerText = `${Math.max(0, 4 - cB)} Available`;
+            document.getElementById('count-g').innerText = `${Math.max(0, 1 - gB)} Available`;
         } else { bV.classList.add('active-proj-btn'); bS.classList.remove('active-proj-btn'); }
         
         document.getElementById('date-info-list').innerHTML = ctxData.map(v => `
             <div class="visit-card" style="border-left-color:${v.color}" onclick="showFeedbackPrompt(${v.id})">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="font-size:0.8rem;">${getAutoLabel(v, visits)}: ${v.client}</b>
+                ${v.linkedin ? `<a href="${v.linkedin}" target="_blank" class="linkedin-link" onclick="event.stopPropagation()">in</a>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-right:30px;">
+                    <b style="font-size:0.8rem;">${v.unitType==='All'?'ALL':v.unitType}${v.unitType==='Cottage' && v.unitsCount > 1 ? ` (${v.unitsCount})` : ''}: ${v.client}</b>
                     <span class="status-tag" style="background:${v.status==='Visited'?'#4ade8022':'#fbbf2422'}; color:${v.status==='Visited'?'#4ade80':'#fbbf24'}">${v.status}</span>
                 </div>
                 <div style="font-size:0.65rem; color:var(--swasya-green); font-weight:800; margin-top:2px;">${v.phone || ''}</div>
@@ -525,35 +707,58 @@
         const v = visits.find(v => v.id === id);
         const modalBody = document.getElementById('modal-body');
         document.getElementById('modal-title').innerText = v.client;
-        document.getElementById('modal-subtitle').innerText = "Visit Detail";
+        document.getElementById('modal-subtitle').innerText = "Client Complete Log";
         document.getElementById('modal-action-btn').style.display = 'none';
-        let foodHtml = v.proj === 'Sannidhi' ? `<div style="grid-column: span 2; background: #fdfdfd; padding: 10px; border-radius: 12px; border: 1px dashed #eee;">
-            <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CATERING REQ.</label>
-            <div style="font-weight:700;">${v.foodPref || 'Not specified'}</div>
-        </div>` : '';
-        modalBody.innerHTML = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PROJECT</label><div style="font-weight:700;">${v.proj}</div></div>
-                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">STATUS</label><div style="font-weight:700;">${v.status}</div></div>
+        
+        let unitText = v.unitType;
+        if (v.unitType === 'All') unitText = "Entire Property (4 Cottages + 1 Glamp)";
+        else if (v.unitType === 'Cottage') unitText = `Cottage (${v.unitsCount} Units)`;
+
+        modalBody.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.85rem;">
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CLIENT NAME</label><div style="font-weight:700;">${v.client}</div></div>
                 <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PHONE</label><div style="font-weight:700; color:var(--swasya-green);">${v.phone || 'N/A'}</div></div>
-                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">MANAGER</label><div style="font-weight:700;">${v.manager}</div></div>
-                ${foodHtml}
+                
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CUSTOMER TYPE</label><div style="font-weight:700;">${v.custType || 'N/A'}</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CHECK-IN / CHECK-OUT</label><div style="font-weight:700;">In: ${v.checkIn || v.date} <br>Out: ${v.checkOut || 'N/A'}</div></div>
+                
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PAX BREAKDOWN</label><div style="font-weight:700;">Adults: ${v.adults || 0} | Kids: ${v.kids || 0} (Total: ${v.pax})</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">TOTAL DURATION</label><div style="font-weight:700;">${v.nights || 1} Night(s)</div></div>
+                
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">UNIT TYPE / QTY</label><div style="font-weight:700;">${unitText}</div></div>
+                <div><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PROJECT / MANAGER</label><div style="font-weight:700;">${v.proj} (${v.manager})</div></div>
+
+                <div style="background:#F0FDF4; padding:10px; border-radius:12px; border:1px solid #bbf7d0;"><label style="display:block; font-size:0.6rem; font-weight:800; color:var(--swasya-green);">TOTAL AMOUNT</label><div style="font-weight:800; font-size:1rem; color:var(--swasya-green);">₹${v.totalCost ? Number(v.totalCost).toLocaleString('en-IN') : '0'}</div></div>
+                <div style="background:#FEF2F2; padding:10px; border-radius:12px; border:1px solid #fecaca;"><label style="display:block; font-size:0.6rem; font-weight:800; color:#dc2626;">PAYMENT STATUS</label><div style="font-weight:700; font-size:0.8rem; color:#dc2626;">Paid: ₹${v.collected || 0} | Pending: ₹${v.pending || 0}</div></div>
             </div>
-            <div style="margin-top:20px; border-top:1px solid #EEE; padding-top:15px;">
-                <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">SITE VISIT NOTES</label>
-                <div style="font-size:0.9rem; background:#F1F5F9; padding:15px; border-radius:12px; margin-top:5px;">${v.pmComment || "No logs yet."}</div>
+            
+            <div style="margin-top:15px; background: #fdfdfd; padding: 10px; border-radius: 12px; border: 1px dashed #eee;">
+                <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">CATERING / LINKEDIN</label>
+                <div style="font-weight:700; font-size:0.8rem;">Food: ${v.foodPref || 'N/A'} | LinkedIn: ${v.linkedin ? `<a href="${v.linkedin}" target="_blank" style="color:#0A66C2;">Profile Link</a>` : 'N/A'}</div>
+            </div>
+
+            <div style="margin-top:15px; border-top:1px solid #EEE; padding-top:10px;">
+                <label style="display:block; font-size:0.6rem; font-weight:800; color:var(--accent-gold);">PROJECT MANAGER LOGS</label>
+                <div style="font-size:0.85rem; background:#F1F5F9; padding:12px; border-radius:12px; margin-top:5px;">${v.pmComment || "No logs recorded yet."}</div>
             </div>`;
+            
         document.getElementById('custom-modal').classList.add('modal-active');
         document.getElementById('custom-modal').classList.remove('hidden');
     }
 
-    function save() { localStorage.setItem('swasya_v96', JSON.stringify(visits)); }
+    function save() { localStorage.setItem('swasya_v101', JSON.stringify(visits)); }
     function changeMonth(dir) { currentViewDate.setMonth(currentViewDate.getMonth() + dir); updateUI(); }
-    function focusDate(date) { selectedDate = date; document.getElementById('c-date').value = date; updateUI(); }
+    function focusDate(date) { 
+        selectedDate = date; 
+        document.getElementById('c-checkin').value = date; 
+        updateCheckOutMin();
+        updateUI(); 
+    }
     function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); document.getElementById('custom-modal').classList.remove('modal-active'); }
     
     function exportAuditToExcel() {
-        let csv = "Date,Client,Phone,Pax,FoodPreference,Unit,Project,Manager,Status,PM Comment\n";
-        visits.forEach(v => { csv += `${v.date},${v.client},${v.phone},${v.pax},${v.foodPref || 'N/A'},${v.unitType},${v.proj},${v.manager},${v.status},"${(v.pmComment || '').replace(/"/g, '""')}"\n`; });
+        let csv = "CheckIn,CheckOut,Nights,Client,Phone,Adults,Kids,TotalPax,CustType,TotalCost,Collected,Pending,LinkedIn,FoodPreference,Unit,UnitsCount,Project,Manager,Status,PM Comment\n";
+        visits.forEach(v => { csv += `${v.checkIn||v.date},${v.checkOut||''},${v.nights||1},${v.client},${v.phone},${v.adults||0},${v.kids||0},${v.pax},${v.custType||'N/A'},${v.totalCost||0},${v.collected||0},${v.pending||0},${v.linkedin||''},${v.foodPref || 'N/A'},${v.unitType},${v.unitsCount||1},${v.proj},${v.manager},${v.status},"${(v.pmComment || '').replace(/"/g, '""')}"\n`; });
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
