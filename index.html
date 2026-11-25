@@ -58,6 +58,11 @@
             box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
         }
 
+        .field-missing {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+        }
+
         .btn-pill {
             font-weight: 700;
             cursor: pointer;
@@ -626,7 +631,7 @@
         /* Phone Layout Refinements */
         @media (max-width: 640px) {
             input, select, textarea, .btn-pill {
-                font-size: 16px; /* Prevents iOS auto-zoom on input focus */
+                font-size: 16px;
                 padding: 11px 16px;
             }
 
@@ -767,22 +772,22 @@
         </div>
 
         <div class="booking-form-bar">
-            <input type="text" id="c-name" class="f-name" placeholder="Client Name *">
-            <input type="text" id="c-phone" class="f-phone" placeholder="Phone Number *">
-            <input type="url" id="c-linkedin" class="f-linkedin" placeholder="LinkedIn URL *">
+            <input type="text" id="c-name" class="f-name" placeholder="Client Name *" oninput="clearFieldError(this)">
+            <input type="text" id="c-phone" class="f-phone" placeholder="Phone Number *" oninput="clearFieldError(this)">
+            <input type="url" id="c-linkedin" class="f-linkedin" placeholder="LinkedIn URL *" oninput="clearFieldError(this)">
 
-            <select id="c-cust-type" class="f-cust-type" onchange="calculatePrice()">
+            <select id="c-cust-type" class="f-cust-type" onchange="calculatePrice(); clearFieldError(this)">
                 <option value="New">New Visit</option>
                 <option value="Existing">Existing Customer</option>
             </select>
 
-            <input type="number" id="c-pax" class="f-pax" placeholder="Adults *" oninput="calculatePrice()">
-            <input type="number" id="c-kids" class="f-kids" placeholder="Kids *" oninput="calculatePrice()">
+            <input type="number" id="c-pax" class="f-pax" min="1" placeholder="Adults (Min 1) *" oninput="calculatePrice(); clearFieldError(this)">
+            <input type="number" id="c-kids" class="f-kids" min="0" placeholder="Kids (Min 0) *" oninput="calculatePrice(); clearFieldError(this)">
 
-            <input type="date" id="c-checkin" class="f-date" onchange="updateCheckOutMin(); calculatePrice();">
-            <input type="date" id="c-checkout" class="f-date" onchange="calculatePrice()">
+            <input type="date" id="c-checkin" class="f-date" onchange="updateCheckOutMin(); calculatePrice(); clearFieldError(this)">
+            <input type="date" id="c-checkout" class="f-date" onchange="calculatePrice(); clearFieldError(this)">
 
-            <input type="number" id="c-collected" class="f-collected" placeholder="Collected (₹) *" oninput="calculatePrice()">
+            <input type="number" id="c-collected" class="f-collected" min="0" placeholder="Collected (₹) *" oninput="calculatePrice(); clearFieldError(this)">
             <input type="number" id="c-pending" class="f-pending" placeholder="Pending (₹)" readonly>
 
             <div id="food-container" class="f-food-wrap">
@@ -863,6 +868,16 @@
     let currentViewDate = new Date();
     let activeContextProj = 'Sannidhi';
     let isSupabaseConnected = false;
+
+    function clearFieldError(el) {
+        if (el) el.classList.remove('field-missing');
+    }
+
+    function clearAllBookingErrors() {
+        document.querySelectorAll('.booking-form-bar .field-missing').forEach(el => {
+            el.classList.remove('field-missing');
+        });
+    }
 
     function toggleMobileSidebar(forceState) {
         const sidebar = document.getElementById('sidebar');
@@ -963,10 +978,10 @@
 
     function calculatePrice() {
         const type = document.getElementById('c-cust-type').value;
-        const adults = parseInt(document.getElementById('c-pax').value) || 0;
-        const kids = parseInt(document.getElementById('c-kids').value) || 0;
+        const adults = Math.max(0, parseInt(document.getElementById('c-pax').value) || 0);
+        const kids = Math.max(0, parseInt(document.getElementById('c-kids').value) || 0);
         const nights = calculateNights();
-        const collected = parseFloat(document.getElementById('c-collected').value) || 0;
+        const collected = Math.max(0, parseFloat(document.getElementById('c-collected').value) || 0);
 
         let total = 0;
         if (type === 'Existing') {
@@ -1028,18 +1043,71 @@
     }
 
     async function submitVisit() {
+        clearAllBookingErrors();
+
+        const nameInput = document.getElementById('c-name');
+        const phoneInput = document.getElementById('c-phone');
+        const linkedinInput = document.getElementById('c-linkedin');
+        const adultsInput = document.getElementById('c-pax');
+        const kidsInput = document.getElementById('c-kids');
+        const checkInInput = document.getElementById('c-checkin');
+        const checkOutInput = document.getElementById('c-checkout');
+        const collectedInput = document.getElementById('c-collected');
+
         const proj = document.getElementById('proj-select').value;
-        const client = document.getElementById('c-name').value;
-        const phone = document.getElementById('c-phone').value;
-        const checkIn = document.getElementById('c-checkin').value;
-        const checkOut = document.getElementById('c-checkout').value;
+        const client = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const linkedin = linkedinInput.value.trim();
+        const checkIn = checkInInput.value;
+        const checkOut = checkOutInput.value;
 
-        const adults = parseInt(document.getElementById('c-pax').value) || 0;
-        const kids = parseInt(document.getElementById('c-kids').value) || 0;
-        const totalPax = adults + kids;
+        const adultsRaw = adultsInput.value.trim();
+        const kidsRaw = kidsInput.value.trim();
+        const collectedRaw = collectedInput.value.trim();
 
-        const linkedin = document.getElementById('c-linkedin').value;
-        const collected = document.getElementById('c-collected').value;
+        const adults = adultsRaw === '' ? NaN : parseInt(adultsRaw, 10);
+        const kids = kidsRaw === '' ? 0 : parseInt(kidsRaw, 10);
+        const collected = collectedRaw === '' ? NaN : parseFloat(collectedRaw);
+
+        const missingChecks = [];
+
+        if (!client) {
+            missingChecks.push({ el: nameInput, label: "Client Name" });
+        }
+        if (!phone) {
+            missingChecks.push({ el: phoneInput, label: "Phone Number" });
+        }
+        if (!linkedin) {
+            missingChecks.push({ el: linkedinInput, label: "LinkedIn URL" });
+        }
+        if (adultsRaw === '' || Number.isNaN(adults) || adults < 1) {
+            missingChecks.push({ el: adultsInput, label: "Adults (minimum 1)" });
+        }
+        if (kidsRaw !== '' && (Number.isNaN(kids) || kids < 0)) {
+            missingChecks.push({ el: kidsInput, label: "Kids (minimum 0)" });
+        }
+        if (!checkIn) {
+            missingChecks.push({ el: checkInInput, label: "Check-in Date" });
+        }
+        if (!checkOut) {
+            missingChecks.push({ el: checkOutInput, label: "Check-out Date" });
+        } else if (checkIn && checkOut <= checkIn) {
+            missingChecks.push({ el: checkOutInput, label: "Check-out Date (must be after Check-in)" });
+        }
+        if (collectedRaw === '' || Number.isNaN(collected) || collected < 0) {
+            missingChecks.push({ el: collectedInput, label: "Collected Amount" });
+        }
+
+        if (missingChecks.length > 0) {
+            missingChecks.forEach(item => item.el.classList.add('field-missing'));
+            missingChecks[0].el.focus();
+            alert("Please fill / fix the missing field(s):\n• " + missingChecks.map(item => item.label).join("\n• "));
+            return;
+        }
+
+        const safeAdults = Math.max(1, adults);
+        const safeKids = Math.max(0, kids);
+        const totalPax = safeAdults + safeKids;
         const pending = document.getElementById('c-pending').value;
         const foodPref = document.getElementById('c-food').value;
         const custType = document.getElementById('c-cust-type').value;
@@ -1051,18 +1119,9 @@
         if (unitType === 'Cottage') unitsCount = parseInt(document.getElementById('c-unit-count').value);
         else if (unitType === 'All') unitsCount = 5;
 
-        if (!client || !phone || !linkedin || !checkIn || !checkOut || collected === "") {
-            alert("Mandatory Fields Missing: Name, Phone, LinkedIn, Check-in, Check-out, and Collected are required.");
-            return;
-        }
-        if (totalPax <= 1) {
-            alert("Error: Total Pax (Adults + Kids) must be more than 1.");
-            return;
-        }
-
         const newVisit = {
             id: Date.now(), manager: session.name, mgrId: session.id, color: session.color,
-            proj, client, phone, pax: totalPax, adults, kids, foodPref, date: checkIn, checkIn, checkOut,
+            proj, client, phone, pax: totalPax, adults: safeAdults, kids: safeKids, foodPref, date: checkIn, checkIn, checkOut,
             unitType, unitsCount, linkedin, collected, pending, custType, totalCost, nights,
             status: 'Not Visited', pmComment: ''
         };
@@ -1082,12 +1141,12 @@
 
         save();
         updateUI();
-        document.getElementById('c-name').value = '';
-        document.getElementById('c-phone').value = '';
-        document.getElementById('c-pax').value = '';
-        document.getElementById('c-kids').value = '';
-        document.getElementById('c-linkedin').value = '';
-        document.getElementById('c-collected').value = '';
+        nameInput.value = '';
+        phoneInput.value = '';
+        adultsInput.value = '';
+        kidsInput.value = '';
+        linkedinInput.value = '';
+        collectedInput.value = '';
         document.getElementById('c-pending').value = '';
         document.getElementById('live-pricing-display').innerText = '';
     }
